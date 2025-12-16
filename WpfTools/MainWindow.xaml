@@ -76,11 +76,13 @@
                        FontWeight="Bold" 
                        Foreground="#2C3E50"
                        HorizontalAlignment="Center"/>
-            <TextBlock Text="JSON格式化 | 图片/Base64转换" 
-                       FontSize="14" 
-                       Foreground="#7F8C8D"
-                       HorizontalAlignment="Center"
-                       Margin="0,5,0,0"/>
+            
+            <!-- 功能按钮区域 -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
+                <Button Content="定时提醒" Name="btnReminderSettings" 
+                        Style="{StaticResource ToolButtonStyle}"
+                        Width="120" Click="BtnReminderSettings_Click"/>
+            </StackPanel>
         </StackPanel>
 
         <!-- 主要功能区域 -->
@@ -91,13 +93,13 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="0.7*"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
                         <!-- 输入区域标题 -->
-                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
                             <Label Content="输入JSON：" Style="{StaticResource ToolLabelStyle}"/>
                             <Button Content="清空" Name="btnClearJsonInput" 
                                    Style="{StaticResource ToolButtonStyle}"
@@ -113,7 +115,7 @@
 
                         <!-- 操作按钮区域 -->
                         <StackPanel Grid.Row="2" Orientation="Horizontal" 
-                                   HorizontalAlignment="Center" Margin="0,15">
+                                   HorizontalAlignment="Center" Margin="0,12">
                             <Button Content="美化格式" Name="btnFormatJson" 
                                    Style="{StaticResource ToolButtonStyle}"
                                    Click="BtnFormatJson_Click"/>
@@ -129,19 +131,29 @@
                         </StackPanel>
 
                         <!-- 输出区域标题 -->
-                        <StackPanel Grid.Row="3" Orientation="Horizontal" 
-                                   Margin="0,15,0,10">
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" >
                             <Label Content="格式化结果：" Style="{StaticResource ToolLabelStyle}"/>
                         </StackPanel>
 
                         <!-- JSON输出文本框 -->
-                        <TextBox Grid.Row="3" Name="txtJsonOutput" 
-                                Style="{StaticResource ToolTextBoxStyle}"
-                                TextWrapping="NoWrap" 
-                                AcceptsReturn="True"
-                                VerticalAlignment="Stretch"
-                                IsReadOnly="True"
-                                Margin="0,35,0,0"/>
+                        <RichTextBox Grid.Row="3" Name="txtJsonOutput" 
+                                     VerticalAlignment="Stretch"
+                                     IsReadOnly="True"
+                                     Margin="0,28,0,0"
+                                     Padding="8"
+                                     BorderBrush="#D1D5DB"
+                                     BorderThickness="1"
+                                     Background="White"
+                                     VerticalScrollBarVisibility="Auto"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     FontFamily="Consolas"
+                                     FontSize="12">
+                            <RichTextBox.Resources>
+                                <Style TargetType="{x:Type Paragraph}">
+                                    <Setter Property="Margin" Value="0"/>
+                                </Style>
+                            </RichTextBox.Resources>
+                        </RichTextBox>
                     </Grid>
                 </Border>
             </TabItem>

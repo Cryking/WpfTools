@@ -75,7 +75,7 @@ namespace WpfTools.Tools
         /// </summary>
         /// <param name="base64String">Base64字符串</param>
         /// <returns>BitmapImage对象，转换失败返回null</returns>
-        public static BitmapImage? Base64ToBitmapImage(string base64String)
+        public static BitmapImage Base64ToBitmapImage(string base64String)
         {
             try
             {
@@ -144,9 +144,9 @@ namespace WpfTools.Tools
         /// </summary>
         /// <param name="filter">文件过滤器</param>
         /// <returns>选择的文件路径，未选择返回null</returns>
-        public static string? ShowOpenFileDialog(string filter = "图片文件|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.ico")
+        public static string ShowOpenFileDialog(string filter = "图片文件|*.jpg;*.jpeg;*.png;*.gif;*.bmp;*.ico")
         {
-            var openFileDialog = new OpenFileDialog
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
                 Filter = filter,
                 Title = "选择图片文件"
@@ -161,9 +161,9 @@ namespace WpfTools.Tools
         /// <param name="defaultFileName">默认文件名</param>
         /// <param name="filter">文件过滤器</param>
         /// <returns>保存的文件路径，未选择返回null</returns>
-        public static string? ShowSaveFileDialog(string defaultFileName = "image", string filter = "PNG图片|*.png|JPEG图片|*.jpg|BMP图片|*.bmp")
+        public static string ShowSaveFileDialog(string defaultFileName = "image", string filter = "PNG图片|*.png|JPEG图片|*.jpg|BMP图片|*.bmp")
         {
-            var saveFileDialog = new SaveFileDialog
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
             {
                 Filter = filter,
                 Title = "保存图片文件",
