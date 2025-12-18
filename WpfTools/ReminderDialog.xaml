@@ -79,8 +79,6 @@
                     Style="{StaticResource ButtonStyle}" Click="BtnStart_Click"/>
             <Button Name="btnStop" Content="停止提醒" Width="100" Height="35" 
                     Style="{StaticResource ButtonStyle}" Click="BtnStop_Click"/>
-            <Button Name="btnClose" Content="关闭" Width="100" Height="35" 
-                    Style="{StaticResource ButtonStyle}" Click="BtnClose_Click"/>
         </StackPanel>
     </Grid>
 </Window>

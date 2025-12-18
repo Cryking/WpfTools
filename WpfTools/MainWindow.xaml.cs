@@ -423,15 +423,35 @@ namespace WpfTools
         /// </summary>
         private void InitializeSystemTray()
         {
-            _notifyIcon = new NotifyIcon
+            try
             {
-                Icon = SystemIcons.Application,
-                Text = "多功能工具箱",
-                Visible = true,
-                BalloonTipTitle = "多功能工具箱",
-                BalloonTipText = "应用程序已启动",
-                BalloonTipIcon = ToolTipIcon.Info
-            };
+                // 使用项目中的icon.ico文件
+                string iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "icon.ico");
+                var icon = new System.Drawing.Icon(iconPath);
+                
+                _notifyIcon = new NotifyIcon
+                {
+                    Icon = icon,
+                    Text = "多功能工具箱",
+                    Visible = true,
+                    BalloonTipTitle = "多功能工具箱",
+                    BalloonTipText = "应用程序已启动",
+                    BalloonTipIcon = ToolTipIcon.Info
+                };
+            }
+            catch
+            {
+                // 如果加载自定义图标失败，使用默认图标
+                _notifyIcon = new NotifyIcon
+                {
+                    Icon = SystemIcons.Application,
+                    Text = "多功能工具箱",
+                    Visible = true,
+                    BalloonTipTitle = "多功能工具箱",
+                    BalloonTipText = "应用程序已启动",
+                    BalloonTipIcon = ToolTipIcon.Info
+                };
+            }
 
             // 设置托盘菜单
             var contextMenu = new ContextMenuStrip();
@@ -586,7 +606,7 @@ namespace WpfTools
                     _notifyIcon.BalloonTipTitle = "定时提醒";
                     _notifyIcon.BalloonTipText = message;
                     _notifyIcon.BalloonTipIcon = ToolTipIcon.Info;
-                    _notifyIcon.ShowBalloonTip(8000);
+                    _notifyIcon.ShowBalloonTip(10000);
                 }
                 catch
                 {

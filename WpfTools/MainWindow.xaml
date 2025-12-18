@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfTools"
         mc:Ignorable="d"
-        Title="多功能工具箱" Height="600" Width="900"
+        Title="多功能工具箱" Height="610" Width="900"
         MinHeight="500" MinWidth="700"
         WindowStartupLocation="CenterScreen"
         Background="#F5F5F5">
@@ -93,29 +93,44 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="0.7*"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <!-- 输入区域标题 -->
-                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-                            <Label Content="输入JSON：" Style="{StaticResource ToolLabelStyle}"/>
-                            <Button Content="清空" Name="btnClearJsonInput" 
-                                   Style="{StaticResource ToolButtonStyle}"
-                                   Width="60" Click="BtnClearJsonInput_Click"/>
-                        </StackPanel>
+                        <!-- 输入区域 -->
+                        <Grid Grid.Row="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="150"/>
+                            </Grid.RowDefinitions>
 
-                        <!-- JSON输入文本框 -->
-                        <TextBox Grid.Row="1" Name="txtJsonInput" 
-                                Style="{StaticResource ToolTextBoxStyle}"
-                                TextWrapping="NoWrap" 
-                                AcceptsReturn="True"
-                                VerticalAlignment="Stretch"/>
+                            <!-- 输入区域标题 -->
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="2">
+                                <Label Content="输入JSON：" Style="{StaticResource ToolLabelStyle}"/>
+                                <Button Content="清空" Name="btnClearJsonInput" 
+                                       Style="{StaticResource ToolButtonStyle}"
+                                       Width="60" Click="BtnClearJsonInput_Click"/>
+                            </StackPanel>
+
+                            <!-- JSON输入文本框 -->
+                            <TextBox Grid.Row="1" Name="txtJsonInput" 
+                                    Style="{StaticResource ToolTextBoxStyle}"
+                                    TextWrapping="NoWrap" 
+                                    AcceptsReturn="True"
+                                    VerticalAlignment="Stretch"/>
+                        </Grid>
+
+                        <!-- 可拖动的分隔条 -->
+                        <GridSplitter Grid.Row="1" Height="5" 
+                                      HorizontalAlignment="Stretch" 
+                                      Background="#E0E0E0"
+                                      ShowsPreview="True"
+                                      VerticalAlignment="Center"/>
 
                         <!-- 操作按钮区域 -->
                         <StackPanel Grid.Row="2" Orientation="Horizontal" 
-                                   HorizontalAlignment="Center" Margin="0,12">
+                                   HorizontalAlignment="Center" Height="32">
                             <Button Content="美化格式" Name="btnFormatJson" 
                                    Style="{StaticResource ToolButtonStyle}"
                                    Click="BtnFormatJson_Click"/>
@@ -130,30 +145,37 @@
                                    Click="BtnCopyJsonResult_Click"/>
                         </StackPanel>
 
-                        <!-- 输出区域标题 -->
-                        <StackPanel Grid.Row="3" Orientation="Horizontal" >
-                            <Label Content="格式化结果：" Style="{StaticResource ToolLabelStyle}"/>
-                        </StackPanel>
+                        <!-- 输出区域 -->
+                        <Grid Grid.Row="3">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
 
-                        <!-- JSON输出文本框 -->
-                        <RichTextBox Grid.Row="3" Name="txtJsonOutput" 
-                                     VerticalAlignment="Stretch"
-                                     IsReadOnly="True"
-                                     Margin="0,28,0,0"
-                                     Padding="8"
-                                     BorderBrush="#D1D5DB"
-                                     BorderThickness="1"
-                                     Background="White"
-                                     VerticalScrollBarVisibility="Auto"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     FontFamily="Consolas"
-                                     FontSize="12">
-                            <RichTextBox.Resources>
-                                <Style TargetType="{x:Type Paragraph}">
-                                    <Setter Property="Margin" Value="0"/>
-                                </Style>
-                            </RichTextBox.Resources>
-                        </RichTextBox>
+                            <!-- 输出区域标题 -->
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                                <Label Content="格式化结果：" Style="{StaticResource ToolLabelStyle}"/>
+                            </StackPanel>
+
+                            <!-- JSON输出文本框 -->
+                            <RichTextBox Grid.Row="1" Name="txtJsonOutput" 
+                                         VerticalAlignment="Stretch"
+                                         IsReadOnly="True"
+                                         Padding="8"
+                                         BorderBrush="#D1D5DB"
+                                         BorderThickness="1"
+                                         Background="White"
+                                         VerticalScrollBarVisibility="Auto"
+                                         HorizontalScrollBarVisibility="Auto"
+                                         FontFamily="Consolas"
+                                         FontSize="12">
+                                <RichTextBox.Resources>
+                                    <Style TargetType="{x:Type Paragraph}">
+                                        <Setter Property="Margin" Value="0"/>
+                                    </Style>
+                                </RichTextBox.Resources>
+                            </RichTextBox>
+                        </Grid>
                     </Grid>
                 </Border>
             </TabItem>
