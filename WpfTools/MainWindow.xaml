@@ -180,6 +180,88 @@
                 </Border>
             </TabItem>
 
+            <!-- 时间戳转换标签页 -->
+            <TabItem Header="时间戳转换">
+                <Border Background="White" CornerRadius="8" Padding="20" Margin="0,10,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 时间戳转换区域 -->
+                        <Grid Grid.Row="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 时间戳输入区域标题 -->
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                                <Label Content="时间戳输入：" Style="{StaticResource ToolLabelStyle}"/>
+                                <Button Content="获取当前时间戳" Name="btnGetCurrentTimestamp" 
+                                       Style="{StaticResource ToolButtonStyle}"
+                                       Width="120" Click="BtnGetCurrentTimestamp_Click"/>
+                                <Button Content="清空" Name="btnClearTimestampInput" 
+                                       Style="{StaticResource ToolButtonStyle}"
+                                       Width="60" Click="BtnClearTimestampInput_Click"/>
+                            </StackPanel>
+
+                            <!-- 时间戳输入框 -->
+                            <TextBox Grid.Row="1" Name="txtTimestampInput" 
+                                    Style="{StaticResource ToolTextBoxStyle}"
+                                    Height="60"
+                                    TextWrapping="NoWrap" 
+                                    AcceptsReturn="True"
+                                    VerticalScrollBarVisibility="Auto"
+                                    HorizontalScrollBarVisibility="Auto"/>
+                        </Grid>
+
+                        <!-- 操作按钮区域 -->
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" 
+                                   HorizontalAlignment="Center" Margin="0,12">
+                            <Button Content="时间戳转日期" Name="btnTimestampToDateTime" 
+                                   Style="{StaticResource ToolButtonStyle}"
+                                   Click="BtnTimestampToDateTime_Click"/>
+                            <Button Content="日期转时间戳" Name="btnDateTimeToTimestamp" 
+                                   Style="{StaticResource ToolButtonStyle}"
+                                   Click="BtnDateTimeToTimestamp_Click"/>
+                            <Button Content="复制结果" Name="btnCopyTimestampResult" 
+                                   Style="{StaticResource ToolButtonStyle}"
+                                   Click="BtnCopyTimestampResult_Click"/>
+                        </StackPanel>
+
+                        <!-- 日期时间输入区域 -->
+                        <StackPanel Grid.Row="2" Margin="0,15,0,0">
+                            <Label Content="日期时间输入：" Style="{StaticResource ToolLabelStyle}"/>
+                            <TextBox Name="txtDateTimeInput" 
+                                    Style="{StaticResource ToolTextBoxStyle}"
+                                    Height="60"
+                                    TextWrapping="NoWrap" 
+                                    AcceptsReturn="True"
+                                    VerticalScrollBarVisibility="Auto"
+                                    HorizontalScrollBarVisibility="Auto"/>
+                        </StackPanel>
+
+                        <!-- 转换结果区域 -->
+                        <StackPanel Grid.Row="3" Margin="0,15,0,0">
+                            <Label Content="转换结果：" Style="{StaticResource ToolLabelStyle}"/>
+                            <TextBox Name="txtTimestampResult" 
+                                    Style="{StaticResource ToolTextBoxStyle}"
+                                    Height="120"
+                                    TextWrapping="NoWrap" 
+                                    AcceptsReturn="True"
+                                    VerticalScrollBarVisibility="Auto"
+                                    HorizontalScrollBarVisibility="Auto"
+                                    IsReadOnly="True"
+                                    Background="#F9F9F9"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </TabItem>
+
             <!-- 图片/Base64转换标签页 -->
             <TabItem Header="图片/Base64转换">
                 <Border Background="White" CornerRadius="8" Padding="20" Margin="0,10,0,0">

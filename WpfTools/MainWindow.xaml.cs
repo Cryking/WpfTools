@@ -174,6 +174,74 @@ namespace WpfTools
 
         #endregion
 
+        #region 时间戳转换相关事件处理
+
+        /// <summary>
+        /// 获取当前时间戳
+        /// </summary>
+        private void BtnGetCurrentTimestamp_Click(object sender, RoutedEventArgs e)
+        {
+            string result = TimestampConverter.GetCurrentTimestamp();
+            txtTimestampResult.Text = result;
+        }
+
+        /// <summary>
+        /// 清空时间戳输入框
+        /// </summary>
+        private void BtnClearTimestampInput_Click(object sender, RoutedEventArgs e)
+        {
+            txtTimestampInput.Clear();
+            txtDateTimeInput.Clear();
+            txtTimestampResult.Clear();
+        }
+
+        /// <summary>
+        /// 时间戳转日期时间
+        /// </summary>
+        private void BtnTimestampToDateTime_Click(object sender, RoutedEventArgs e)
+        {
+            string input = txtTimestampInput.Text.Trim();
+            if (string.IsNullOrEmpty(input))
+            {
+                txtTimestampResult.Text = "请输入时间戳";
+                return;
+            }
+
+            string result = TimestampConverter.AutoDetectTimestamp(input);
+            txtTimestampResult.Text = result;
+        }
+
+        /// <summary>
+        /// 日期时间转时间戳
+        /// </summary>
+        private void BtnDateTimeToTimestamp_Click(object sender, RoutedEventArgs e)
+        {
+            string input = txtDateTimeInput.Text.Trim();
+            if (string.IsNullOrEmpty(input))
+            {
+                txtTimestampResult.Text = "请输入日期时间字符串";
+                return;
+            }
+
+            string result = TimestampConverter.DateTimeToTimestamp(input);
+            txtTimestampResult.Text = result;
+        }
+
+        /// <summary>
+        /// 复制时间戳转换结果到剪贴板
+        /// </summary>
+        private void BtnCopyTimestampResult_Click(object sender, RoutedEventArgs e)
+        {
+            string text = txtTimestampResult.Text;
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                System.Windows.Clipboard.SetText(text);
+                System.Windows.MessageBox.Show("已复制到剪贴板", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        #endregion
+
         #region 查找功能相关事件处理
 
         /// <summary>
