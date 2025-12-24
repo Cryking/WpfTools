@@ -25,12 +25,12 @@ namespace WpfTools.Tools
                 if (isMilliseconds)
                 {
                     // 毫秒级时间戳（13位）
-                    dateTime = DateTimeOffset.FromUnixTimeMilliseconds(timestamp).DateTime;
+                    dateTime = DateTimeOffset.FromUnixTimeMilliseconds(timestamp).ToLocalTime().DateTime;
                 }
                 else
                 {
                     // 秒级时间戳（10位）
-                    dateTime = DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
+                    dateTime = DateTimeOffset.FromUnixTimeSeconds(timestamp).ToLocalTime().DateTime;
                 }
                 
                 return dateTime.ToString("yyyy-MM-dd HH:mm:ss");
