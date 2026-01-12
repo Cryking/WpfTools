@@ -61,6 +61,91 @@
             <Setter Property="Foreground" Value="#374151"/>
             <Setter Property="Margin" Value="0,5"/>
         </Style>
+
+        <!-- 下拉框样式 -->
+        <Style x:Key="ToolComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="FontFamily" Value="Microsoft YaHei"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton Name="ToggleButton" 
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}"
+                                          IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="20"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" 
+                                            Background="{TemplateBinding Background}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter Name="ContentSite"
+                                                        IsHitTestVisible="False" 
+                                                        Content="{TemplateBinding SelectionBoxItem}"
+                                                        ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                        ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                        Margin="3,3,23,3"
+                                                        VerticalAlignment="Center"
+                                                        HorizontalAlignment="Left"/>
+                                    </Border>
+                                    <Border Grid.Column="1" 
+                                            Background="#F0F0F0"
+                                            Width="20"
+                                            HorizontalAlignment="Right">
+                                        <Path x:Name="Arrow"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Fill="#666"
+                                              Data="M 0 0 L 4 4 L 8 0 Z"/>
+                                    </Border>
+                                </Grid>
+                            </ToggleButton>
+                            <Popup Name="Popup" 
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True" 
+                                   Focusable="False"
+                                   PopupAnimation="Slide">
+                                <Grid Name="DropDown" 
+                                      SnapsToDevicePixels="True"                
+                                      MinWidth="{TemplateBinding ActualWidth}"
+                                      MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border x:Name="DropDownBorder" 
+                                            Background="White"
+                                            BorderThickness="1"
+                                            BorderBrush="#D1D5DB"
+                                            CornerRadius="3"/>
+                                    <ScrollViewer Margin="4,6,4,6" 
+                                                SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True" 
+                                                    KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ToggleButton" Property="BorderBrush" Value="#4A90E2"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="ToggleButton" Property="BorderBrush" Value="#4A90E2"/>
+                            </Trigger>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter TargetName="ToggleButton" Property="BorderBrush" Value="#4A90E2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="20">
@@ -187,20 +272,13 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto" MinHeight="35"/>
-                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <!-- 时间戳转换区域 -->
-                        <Grid Grid.Row="0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-
-                            <!-- 时间戳输入区域标题 -->
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-                                <Label Content="时间戳输入：" Style="{StaticResource ToolLabelStyle}"/>
+                        <!-- 输入区域 -->
+                        <StackPanel Grid.Row="0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Label Content="输入内容（时间戳或日期时间）：" Style="{StaticResource ToolLabelStyle}"/>
                                 <Button Content="获取当前时间戳" Name="btnGetCurrentTimestamp" 
                                        Style="{StaticResource ToolButtonStyle}"
                                        Width="120" Click="BtnGetCurrentTimestamp_Click"/>
@@ -208,20 +286,22 @@
                                        Style="{StaticResource ToolButtonStyle}"
                                        Width="60" Click="BtnClearTimestampInput_Click"/>
                             </StackPanel>
-
-                            <!-- 时间戳输入框 -->
-                            <TextBox Grid.Row="1" Name="txtTimestampInput" 
+                            
+                            <TextBox Name="txtTimestampInput" 
                                     Style="{StaticResource ToolTextBoxStyle}"
-                                    Height="60"
+                                    Height="80"
                                     TextWrapping="NoWrap" 
                                     AcceptsReturn="True"
                                     VerticalScrollBarVisibility="Auto"
                                     HorizontalScrollBarVisibility="Auto"/>
-                        </Grid>
+                        </StackPanel>
 
                         <!-- 操作按钮区域 -->
                         <StackPanel Grid.Row="1" Orientation="Horizontal" 
                                    HorizontalAlignment="Center" Margin="0,12">
+                            <Button Content="自动检测并转换" Name="btnAutoDetectAndConvert" 
+                                   Style="{StaticResource ToolButtonStyle}"
+                                   Click="BtnAutoDetectAndConvert_Click"/>
                             <Button Content="时间戳转日期" Name="btnTimestampToDateTime" 
                                    Style="{StaticResource ToolButtonStyle}"
                                    Click="BtnTimestampToDateTime_Click"/>
@@ -233,22 +313,86 @@
                                    Click="BtnCopyTimestampResult_Click"/>
                         </StackPanel>
 
-                        <!-- 日期时间输入区域 -->
+                        <!-- 转换结果区域 -->
                         <StackPanel Grid.Row="2" Margin="0,15,0,0">
-                            <Label Content="日期时间输入：" Style="{StaticResource ToolLabelStyle}"/>
-                            <TextBox Name="txtDateTimeInput" 
+                            <Label Content="转换结果：" Style="{StaticResource ToolLabelStyle}"/>
+                            <TextBox Name="txtTimestampResult" 
                                     Style="{StaticResource ToolTextBoxStyle}"
-                                    Height="60"
+                                    Height="120"
+                                    TextWrapping="NoWrap" 
+                                    AcceptsReturn="True"
+                                    VerticalScrollBarVisibility="Auto"
+                                    HorizontalScrollBarVisibility="Auto"
+                                    IsReadOnly="True"
+                                    Background="#F9F9F9"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <!-- 字符串Base64转换标签页 -->
+            <TabItem Header="字符串Base64转换">
+                <Border Background="White" CornerRadius="8" Padding="20" Margin="0,10,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 输入区域 -->
+                        <StackPanel Grid.Row="0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Label Content="输入内容（字符串或Base64）：" Style="{StaticResource ToolLabelStyle}"/>
+                                <Label Content="字符集：" Style="{StaticResource ToolLabelStyle}" Margin="20,0,5,0"/>
+                                <ComboBox Name="cmbStringEncoding" Width="120" Margin="0,0,10,0" Style="{StaticResource ToolComboBoxStyle}">
+                                    <ComboBoxItem Content="UTF-8" IsSelected="True"/>
+                                    <ComboBoxItem Content="GBK"/>
+                                    <ComboBoxItem Content="GB2312"/>
+                                    <ComboBoxItem Content="ASCII"/>
+                                    <ComboBoxItem Content="Unicode"/>
+                                    <ComboBoxItem Content="UTF-7"/>
+                                    <ComboBoxItem Content="UTF-16"/>
+                                    <ComboBoxItem Content="UTF-32"/>
+                                </ComboBox>
+                                <Button Content="清空" Name="btnClearStringInput" 
+                                       Style="{StaticResource ToolButtonStyle}"
+                                       Width="60" Click="BtnClearStringInput_Click"/>
+                            </StackPanel>
+                            
+                            <TextBox Name="txtStringInput" 
+                                    Style="{StaticResource ToolTextBoxStyle}"
+                                    Height="80"
                                     TextWrapping="NoWrap" 
                                     AcceptsReturn="True"
                                     VerticalScrollBarVisibility="Auto"
                                     HorizontalScrollBarVisibility="Auto"/>
                         </StackPanel>
 
+                        <!-- 操作按钮区域 -->
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" 
+                                   HorizontalAlignment="Center" Margin="0,12">
+                            <Button Content="自动检测并转换" Name="btnAutoDetectStringConvert" 
+                                   Style="{StaticResource ToolButtonStyle}"
+                                   Click="BtnAutoDetectStringConvert_Click"/>
+                            <Button Content="编码为Base64" Name="btnStringToBase64" 
+                                   Style="{StaticResource ToolButtonStyle}"
+                                   Click="BtnStringToBase64_Click"/>
+                            <Button Content="Base64解码" Name="btnBase64ToString" 
+                                   Style="{StaticResource ToolButtonStyle}"
+                                   Click="BtnBase64ToString_Click"/>
+                            <Button Content="多编码尝试解码" Name="btnTryMultipleDecodings" 
+                                   Style="{StaticResource ToolButtonStyle}"
+                                   Click="BtnTryMultipleDecodings_Click"/>
+                            <Button Content="复制结果" Name="btnCopyStringResult" 
+                                   Style="{StaticResource ToolButtonStyle}"
+                                   Click="BtnCopyStringResult_Click"/>
+                        </StackPanel>
+
                         <!-- 转换结果区域 -->
-                        <StackPanel Grid.Row="3" Margin="0,15,0,0">
+                        <StackPanel Grid.Row="2" Margin="0,15,0,0">
                             <Label Content="转换结果：" Style="{StaticResource ToolLabelStyle}"/>
-                            <TextBox Name="txtTimestampResult" 
+                            <TextBox Name="txtStringResult" 
                                     Style="{StaticResource ToolTextBoxStyle}"
                                     Height="120"
                                     TextWrapping="NoWrap" 

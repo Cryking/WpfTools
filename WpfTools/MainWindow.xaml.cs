@@ -181,8 +181,15 @@ namespace WpfTools
         /// </summary>
         private void BtnGetCurrentTimestamp_Click(object sender, RoutedEventArgs e)
         {
-            string result = TimestampConverter.GetCurrentTimestamp();
-            txtTimestampResult.Text = result;
+            try
+            {
+                string result = TimestampConverter.GetCurrentTimestamp();
+                txtTimestampResult.Text = result;
+            }
+            catch (Exception ex)
+            {
+                txtTimestampResult.Text = $"获取时间戳失败: {ex.Message}";
+            }
         }
 
         /// <summary>
@@ -190,9 +197,50 @@ namespace WpfTools
         /// </summary>
         private void BtnClearTimestampInput_Click(object sender, RoutedEventArgs e)
         {
-            txtTimestampInput.Clear();
-            txtDateTimeInput.Clear();
-            txtTimestampResult.Clear();
+            try
+            {
+                txtTimestampInput.Clear();
+                txtTimestampResult.Clear();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"清空输入失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        /// <summary>
+        /// 自动检测并转换时间戳或日期时间
+        /// </summary>
+        private void BtnAutoDetectAndConvert_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string input = txtTimestampInput.Text.Trim();
+                if (string.IsNullOrEmpty(input))
+                {
+                    txtTimestampResult.Text = "请输入时间戳或日期时间";
+                    return;
+                }
+
+                string result = "自动检测结果:\n\n";
+                
+                // 尝试判断是否为时间戳
+                if (IsTimestamp(input))
+                {
+                    result += "检测到输入为时间戳:\n";
+                    result += TimestampConverter.AutoDetectTimestamp(input) + "\n\n";
+                }
+                
+                // 尝试判断是否为日期时间
+                result += "尝试将输入作为日期时间转换为时间戳:\n";
+                result += TimestampConverter.DateTimeToTimestamp(input);
+                
+                txtTimestampResult.Text = result;
+            }
+            catch (Exception ex)
+            {
+                txtTimestampResult.Text = $"转换失败: {ex.Message}";
+            }
         }
 
         /// <summary>
@@ -200,15 +248,22 @@ namespace WpfTools
         /// </summary>
         private void BtnTimestampToDateTime_Click(object sender, RoutedEventArgs e)
         {
-            string input = txtTimestampInput.Text.Trim();
-            if (string.IsNullOrEmpty(input))
+            try
             {
-                txtTimestampResult.Text = "请输入时间戳";
-                return;
-            }
+                string input = txtTimestampInput.Text.Trim();
+                if (string.IsNullOrEmpty(input))
+                {
+                    txtTimestampResult.Text = "请输入时间戳";
+                    return;
+                }
 
-            string result = TimestampConverter.AutoDetectTimestamp(input);
-            txtTimestampResult.Text = result;
+                string result = TimestampConverter.AutoDetectTimestamp(input);
+                txtTimestampResult.Text = result;
+            }
+            catch (Exception ex)
+            {
+                txtTimestampResult.Text = $"时间戳转换失败: {ex.Message}";
+            }
         }
 
         /// <summary>
@@ -216,15 +271,22 @@ namespace WpfTools
         /// </summary>
         private void BtnDateTimeToTimestamp_Click(object sender, RoutedEventArgs e)
         {
-            string input = txtDateTimeInput.Text.Trim();
-            if (string.IsNullOrEmpty(input))
+            try
             {
-                txtTimestampResult.Text = "请输入日期时间字符串";
-                return;
-            }
+                string input = txtTimestampInput.Text.Trim();
+                if (string.IsNullOrEmpty(input))
+                {
+                    txtTimestampResult.Text = "请输入日期时间字符串";
+                    return;
+                }
 
-            string result = TimestampConverter.DateTimeToTimestamp(input);
-            txtTimestampResult.Text = result;
+                string result = TimestampConverter.DateTimeToTimestamp(input);
+                txtTimestampResult.Text = result;
+            }
+            catch (Exception ex)
+            {
+                txtTimestampResult.Text = $"日期时间转换失败: {ex.Message}";
+            }
         }
 
         /// <summary>
@@ -232,11 +294,202 @@ namespace WpfTools
         /// </summary>
         private void BtnCopyTimestampResult_Click(object sender, RoutedEventArgs e)
         {
-            string text = txtTimestampResult.Text;
-            if (!string.IsNullOrWhiteSpace(text))
+            try
             {
-                System.Windows.Clipboard.SetText(text);
-                System.Windows.MessageBox.Show("已复制到剪贴板", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                string text = txtTimestampResult.Text;
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    System.Windows.Clipboard.SetText(text);
+                    System.Windows.MessageBox.Show("已复制到剪贴板", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show("没有内容可复制", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"复制失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        /// <summary>
+        /// 判断输入是否为时间戳
+        /// </summary>
+        /// <param name="input">输入字符串</param>
+        /// <returns>是否为时间戳</returns>
+        private bool IsTimestamp(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return false;
+
+            // 移除可能的空格
+            input = input.Trim();
+
+            // 检查是否全为数字
+            foreach (char c in input)
+            {
+                if (!char.IsDigit(c))
+                    return false;
+            }
+
+            // 检查长度，通常时间戳是10位（秒级）或13位（毫秒级）
+            return input.Length >= 10 && input.Length <= 13;
+        }
+
+        #endregion
+
+        #region 字符串Base64转换相关事件处理
+
+        /// <summary>
+        /// 清空字符串Base64转换输入框
+        /// </summary>
+        private void BtnClearStringInput_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                txtStringInput.Clear();
+                txtStringResult.Clear();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"清空输入失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        /// <summary>
+        /// 自动检测并转换字符串或Base64
+        /// </summary>
+        private void BtnAutoDetectStringConvert_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string input = txtStringInput.Text.Trim();
+                if (string.IsNullOrEmpty(input))
+                {
+                    txtStringResult.Text = "请输入字符串或Base64";
+                    return;
+                }
+
+                string encodingName = (cmbStringEncoding.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "UTF-8";
+                string result = "自动检测结果:\n\n";
+                
+                // 尝试判断是否为Base64
+                if (StringBase64Converter.IsBase64String(input))
+                {
+                    result += "检测到输入可能为Base64，尝试解码:\n";
+                    result += StringBase64Converter.DecodeFromBase64(input, encodingName) + "\n\n";
+                    
+                    // 也提供多编码尝试解码的结果
+                    result += "多编码尝试解码结果:\n";
+                    result += StringBase64Converter.TryDecodeWithMultipleEncodings(input);
+                }
+                else
+                {
+                    result += "检测到输入可能为普通字符串，尝试编码为Base64:\n";
+                    result += StringBase64Converter.EncodeToBase64(input, encodingName);
+                }
+                
+                txtStringResult.Text = result;
+            }
+            catch (Exception ex)
+            {
+                txtStringResult.Text = $"自动转换失败: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 将字符串编码为Base64
+        /// </summary>
+        private void BtnStringToBase64_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string input = txtStringInput.Text.Trim();
+                if (string.IsNullOrEmpty(input))
+                {
+                    txtStringResult.Text = "请输入要编码的字符串";
+                    return;
+                }
+
+                string encodingName = (cmbStringEncoding.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "UTF-8";
+                string result = StringBase64Converter.EncodeToBase64(input, encodingName);
+                txtStringResult.Text = result;
+            }
+            catch (Exception ex)
+            {
+                txtStringResult.Text = $"Base64编码失败: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 将Base64字符串解码为普通字符串
+        /// </summary>
+        private void BtnBase64ToString_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string input = txtStringInput.Text.Trim();
+                if (string.IsNullOrEmpty(input))
+                {
+                    txtStringResult.Text = "请输入要解码的Base64字符串";
+                    return;
+                }
+
+                string encodingName = (cmbStringEncoding.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "UTF-8";
+                string result = StringBase64Converter.DecodeFromBase64(input, encodingName);
+                txtStringResult.Text = result;
+            }
+            catch (Exception ex)
+            {
+                txtStringResult.Text = $"Base64解码失败: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 尝试使用多种编码解码Base64字符串
+        /// </summary>
+        private void BtnTryMultipleDecodings_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string input = txtStringInput.Text.Trim();
+                if (string.IsNullOrEmpty(input))
+                {
+                    txtStringResult.Text = "请输入要解码的Base64字符串";
+                    return;
+                }
+
+                string result = StringBase64Converter.TryDecodeWithMultipleEncodings(input);
+                txtStringResult.Text = result;
+            }
+            catch (Exception ex)
+            {
+                txtStringResult.Text = $"多编码尝试解码失败: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// 复制字符串Base64转换结果到剪贴板
+        /// </summary>
+        private void BtnCopyStringResult_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string text = txtStringResult.Text;
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    System.Windows.Clipboard.SetText(text);
+                    System.Windows.MessageBox.Show("已复制到剪贴板", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show("没有内容可复制", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"复制失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
