@@ -239,27 +239,62 @@
 
                             <!-- 输出区域标题 -->
                             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-                                <Label Content="格式化结果：" Style="{StaticResource ToolLabelStyle}"/>
+                                <Label Content="格式化结果（可点击折叠/展开）：" Style="{StaticResource ToolLabelStyle}"/>
                             </StackPanel>
 
-                            <!-- JSON输出文本框 -->
-                            <RichTextBox Grid.Row="1" Name="txtJsonOutput" 
-                                         VerticalAlignment="Stretch"
-                                         IsReadOnly="True"
-                                         Padding="8"
-                                         BorderBrush="#D1D5DB"
-                                         BorderThickness="1"
-                                         Background="White"
-                                         VerticalScrollBarVisibility="Auto"
-                                         HorizontalScrollBarVisibility="Auto"
-                                         FontFamily="Consolas"
-                                         FontSize="12">
-                                <RichTextBox.Resources>
-                                    <Style TargetType="{x:Type Paragraph}">
-                                        <Setter Property="Margin" Value="0"/>
+                            <!-- JSON输出TreeView -->
+                            <TreeView Grid.Row="1" Name="tvJsonOutput" 
+                                      BorderBrush="#D1D5DB"
+                                      BorderThickness="1"
+                                      Background="White">
+                                <TreeView.ItemContainerStyle>
+                                    <Style TargetType="TreeViewItem">
+                                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#F0F8FF"/>
+                                            </Trigger>
+                                        </Style.Triggers>
                                     </Style>
-                                </RichTextBox.Resources>
-                            </RichTextBox>
+                                </TreeView.ItemContainerStyle>
+                                <TreeView.ItemTemplate>
+                                    <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                        <Grid>
+                                            <TextBlock Text="{Binding FullText}" 
+                                                       MouseLeftButtonDown="TextBlock_MouseLeftButtonDown"
+                                                       Tag="{Binding}"
+                                                       Foreground="#333"
+                                                       FontFamily="Consolas"
+                                                       FontSize="12">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding NodeType}" Value="String">
+                                                                <Setter Property="Foreground" Value="#A31515"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding NodeType}" Value="Number">
+                                                                <Setter Property="Foreground" Value="#098658"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding NodeType}" Value="Boolean">
+                                                                <Setter Property="Foreground" Value="#0000FF"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding NodeType}" Value="Null">
+                                                                <Setter Property="Foreground" Value="#808080"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding NodeType}" Value="Object">
+                                                                <Setter Property="Foreground" Value="#795E26"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding NodeType}" Value="Array">
+                                                                <Setter Property="Foreground" Value="#795E26"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </HierarchicalDataTemplate>
+                                </TreeView.ItemTemplate>
+                            </TreeView>
                         </Grid>
                     </Grid>
                 </Border>
@@ -351,7 +386,6 @@
                                     <ComboBoxItem Content="GB2312"/>
                                     <ComboBoxItem Content="ASCII"/>
                                     <ComboBoxItem Content="Unicode"/>
-                                    <ComboBoxItem Content="UTF-7"/>
                                     <ComboBoxItem Content="UTF-16"/>
                                     <ComboBoxItem Content="UTF-32"/>
                                 </ComboBox>

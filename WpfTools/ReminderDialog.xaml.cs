@@ -9,8 +9,6 @@ namespace WpfTools
     public partial class ReminderDialog : Window
     {
         public event Action<int, string> ReminderSettingsUpdated;
-        
-        private bool _isReminderActive = false;
 
         public ReminderDialog()
         {
@@ -35,17 +33,10 @@ namespace WpfTools
                 return;
             }
 
-            _isReminderActive = true;
-            btnStart.IsEnabled = false;
-            btnStop.IsEnabled = true;
-            txtMinutes.IsEnabled = false;
-            txtMessage.IsEnabled = false;
+            SetInputState(false);
 
             // 触发提醒设置更新事件
-            if (ReminderSettingsUpdated != null)
-            {
-                ReminderSettingsUpdated(minutes, message);
-            }            
+            ReminderSettingsUpdated?.Invoke(minutes, message);
         }
 
         /// <summary>
@@ -69,19 +60,24 @@ namespace WpfTools
         /// </summary>
         private void StopReminder()
         {
-            _isReminderActive = false;
-            btnStart.IsEnabled = true;
-            btnStop.IsEnabled = false;
-            txtMinutes.IsEnabled = true;
-            txtMessage.IsEnabled = true;
+            SetInputState(true);
 
-            // 触发停止提醒事件
-            if (ReminderSettingsUpdated != null)
-            {
-                ReminderSettingsUpdated(0, string.Empty);
-            }
-            
+            // 触发停止提醒事件（间隔为0表示停止）
+            ReminderSettingsUpdated?.Invoke(0, string.Empty);
+
             System.Windows.MessageBox.Show("提醒已停止", "提醒设置", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        /// <summary>
+        /// 切换输入控件与按钮的启用状态
+        /// </summary>
+        /// <param name="editable">是否处于可编辑（未启动提醒）状态</param>
+        private void SetInputState(bool editable)
+        {
+            btnStart.IsEnabled = editable;
+            btnStop.IsEnabled = !editable;
+            txtMinutes.IsEnabled = editable;
+            txtMessage.IsEnabled = editable;
         }
 
         /// <summary>

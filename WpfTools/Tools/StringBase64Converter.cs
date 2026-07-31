@@ -23,7 +23,6 @@ namespace WpfTools.Tools
                 "GB2312",
                 "ASCII",
                 "Unicode",
-                "UTF-7",
                 "UTF-16",
                 "UTF-32"
             };
@@ -108,31 +107,17 @@ namespace WpfTools.Tools
         {
             try
             {
-                switch (encodingName.ToUpperInvariant())
+                // GBK/GB2312 依赖 CodePagesEncodingProvider（已在App启动时注册）
+                return encodingName.ToUpperInvariant() switch
                 {
-                    case "UTF-8":
-                    case "UTF8":
-                        return Encoding.UTF8;
-                    case "GBK":
-                        return Encoding.GetEncoding("GBK");
-                    case "GB2312":
-                        return Encoding.GetEncoding("GB2312");
-                    case "ASCII":
-                        return Encoding.ASCII;
-                    case "UNICODE":
-                        return Encoding.Unicode;
-                    case "UTF-7":
-                    case "UTF7":
-                        return Encoding.UTF7;
-                    case "UTF-16":
-                    case "UTF16":
-                        return Encoding.Unicode;
-                    case "UTF-32":
-                    case "UTF32":
-                        return Encoding.UTF32;
-                    default:
-                        return null;
-                }
+                    "UTF-8" or "UTF8" => Encoding.UTF8,
+                    "GBK" => Encoding.GetEncoding("GBK"),
+                    "GB2312" => Encoding.GetEncoding("GB2312"),
+                    "ASCII" => Encoding.ASCII,
+                    "UNICODE" or "UTF-16" or "UTF16" => Encoding.Unicode,
+                    "UTF-32" or "UTF32" => Encoding.UTF32,
+                    _ => null
+                };
             }
             catch
             {
@@ -150,21 +135,10 @@ namespace WpfTools.Tools
             if (string.IsNullOrWhiteSpace(input))
                 return false;
 
-            try
-            {
-                string trimmed = input.Trim();
-                // 检查长度是否为4的倍数
-                if (trimmed.Length % 4 != 0)
-                    return false;
-                
-                // 尝试转换
-                Convert.FromBase64String(trimmed);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            string trimmed = input.Trim();
+            // 长度必须为4的倍数，使用TryFromBase64String避免异常开销
+            return trimmed.Length % 4 == 0 &&
+                   Convert.TryFromBase64String(trimmed, new byte[trimmed.Length / 4 * 3], out _);
         }
 
         /// <summary>
@@ -184,8 +158,10 @@ namespace WpfTools.Tools
             result.AppendLine("尝试使用多种编码解码结果：");
             result.AppendLine();
 
-            var encodings = new List<string> { "UTF-8", "GBK", "GB2312", "ASCII", "Unicode", "UTF-16" };
-            
+            // Unicode与UTF-16等价，仅保留一个避免重复输出
+            var encodings = new[] { "UTF-8", "GBK", "GB2312", "ASCII", "Unicode" };
+            int successCount = 0;
+
             foreach (var encodingName in encodings)
             {
                 try
@@ -194,8 +170,9 @@ namespace WpfTools.Tools
                     // 如果是错误信息，跳过
                     if (decoded.Contains("失败") || decoded.Contains("错误"))
                         continue;
-                        
+
                     result.AppendLine($"{encodingName}: {decoded}");
+                    successCount++;
                 }
                 catch
                 {
@@ -203,11 +180,8 @@ namespace WpfTools.Tools
                 }
             }
 
-            // 如果所有编码都失败
-            if (result.ToString().Split('\n').Length <= 3)
-            {
+            if (successCount == 0)
                 result.AppendLine("无法使用任何常见编码解码此Base64字符串");
-            }
 
             return result.ToString();
         }

@@ -54,20 +54,10 @@ namespace WpfTools.Tools
                 if (string.IsNullOrWhiteSpace(dateTimeString))
                     return "请输入有效的日期时间字符串";
 
-                DateTime dateTime;
-                
-                // 尝试使用指定格式解析
-                if (DateTime.TryParseExact(dateTimeString, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out dateTime))
+                // 优先使用指定格式，失败后回退到常见格式
+                string[] formats =
                 {
-                    var offset = new DateTimeOffset(dateTime);
-                    long seconds = offset.ToUnixTimeSeconds();
-                    long milliseconds = offset.ToUnixTimeMilliseconds();
-                    
-                    return $"秒级时间戳: {seconds}\n毫秒级时间戳: {milliseconds}";
-                }
-                
-                // 如果指定格式失败，尝试常见格式
-                string[] commonFormats = {
+                    format,
                     "yyyy-MM-dd HH:mm:ss",
                     "yyyy/MM/dd HH:mm:ss",
                     "yyyy-MM-dd",
@@ -76,20 +66,12 @@ namespace WpfTools.Tools
                     "dd-MM-yyyy HH:mm:ss",
                     "dd/MM/yyyy HH:mm:ss"
                 };
-                
-                foreach (var fmt in commonFormats)
-                {
-                    if (DateTime.TryParseExact(dateTimeString, fmt, CultureInfo.InvariantCulture, DateTimeStyles.None, out dateTime))
-                    {
-                        var offset = new DateTimeOffset(dateTime);
-                        long seconds = offset.ToUnixTimeSeconds();
-                        long milliseconds = offset.ToUnixTimeMilliseconds();
-                        
-                        return $"秒级时间戳: {seconds}\n毫秒级时间戳: {milliseconds}";
-                    }
-                }
-                
-                return "无法解析日期时间字符串，请检查格式";
+
+                if (!DateTime.TryParseExact(dateTimeString.Trim(), formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dateTime))
+                    return "无法解析日期时间字符串，请检查格式";
+
+                var offset = new DateTimeOffset(dateTime);
+                return $"秒级时间戳: {offset.ToUnixTimeSeconds()}\n毫秒级时间戳: {offset.ToUnixTimeMilliseconds()}";
             }
             catch (Exception ex)
             {
@@ -129,19 +111,11 @@ namespace WpfTools.Tools
                 if (string.IsNullOrWhiteSpace(timestamp))
                     return "请输入有效的时间戳";
 
-                if (!long.TryParse(timestamp, out long ts))
+                if (!long.TryParse(timestamp.Trim(), out long ts))
                     return "时间戳格式不正确，请输入数字";
 
-                // 根据位数判断是秒级还是毫秒级
-                // 通常毫秒级时间戳是13位，秒级是10位
-                if (timestamp.Length >= 13)
-                {
-                    return TimestampToDateTime(ts, true);
-                }
-                else
-                {
-                    return TimestampToDateTime(ts, false);
-                }
+                // 根据位数判断：毫秒级时间戳通常是13位，秒级是10位
+                return TimestampToDateTime(ts, timestamp.Trim().Length >= 13);
             }
             catch (Exception ex)
             {

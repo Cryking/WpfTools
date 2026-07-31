@@ -14,7 +14,7 @@ namespace WpfTools
     /// </summary>
     public partial class FindDialog : Window
     {
-        public System.Windows.Controls.RichTextBox? TargetRichTextBox { get; set; }
+        public System.Windows.Controls.RichTextBox TargetRichTextBox { get; set; }
         private readonly List<int> _matchPositions = new List<int>();
         private int _currentMatchIndex = -1;
 

@@ -1,8 +1,5 @@
 using System.IO;
-using System.Text;
-using System.Windows;
 using System.Windows.Media.Imaging;
-using Microsoft.Win32;
 
 namespace WpfTools.Tools
 {
@@ -105,12 +102,12 @@ namespace WpfTools.Tools
         }
 
         /// <summary>
-        /// 将BitmapImage转换为Base64字符串
+        /// 将位图源（BitmapImage/剪贴板图片等）转换为Base64字符串
         /// </summary>
-        /// <param name="bitmap">BitmapImage对象</param>
+        /// <param name="bitmap">位图源对象</param>
         /// <param name="format">图片格式（默认为png）</param>
         /// <returns>Base64字符串</returns>
-        public static string BitmapImageToBase64(BitmapImage bitmap, string format = "png")
+        public static string BitmapImageToBase64(BitmapSource bitmap, string format = "png")
         {
             try
             {
@@ -118,20 +115,15 @@ namespace WpfTools.Tools
                     return "图片对象为空";
 
                 byte[] imageBytes;
-                string encoderType = GetEncoderType(format);
-
                 using (var stream = new MemoryStream())
                 {
-                    var encoder = GetBitmapEncoder(encoderType);
+                    var encoder = CreateEncoder(format);
                     encoder.Frames.Add(BitmapFrame.Create(bitmap));
                     encoder.Save(stream);
                     imageBytes = stream.ToArray();
                 }
 
-                string base64String = Convert.ToBase64String(imageBytes);
-                string mimeType = GetMimeType($".{format}");
-                
-                return $"data:{mimeType};base64,{base64String}";
+                return $"data:{GetMimeType($".{format}")};base64,{Convert.ToBase64String(imageBytes)}";
             }
             catch (Exception ex)
             {
@@ -199,41 +191,20 @@ namespace WpfTools.Tools
         /// <returns>纯净的Base64字符串</returns>
         private static string RemoveDataUriPrefix(string base64String)
         {
-            if (base64String.Contains(","))
-            {
-                return base64String.Substring(base64String.IndexOf(',') + 1);
-            }
-            return base64String;
+            int commaIndex = base64String.IndexOf(',');
+            return commaIndex >= 0 ? base64String.Substring(commaIndex + 1) : base64String;
         }
 
         /// <summary>
-        /// 根据格式获取编码器类型
+        /// 根据图片格式创建对应的BitmapEncoder
         /// </summary>
         /// <param name="format">图片格式</param>
-        /// <returns>编码器类型字符串</returns>
-        private static string GetEncoderType(string format)
+        /// <returns>BitmapEncoder实例，未知格式默认PNG</returns>
+        private static BitmapEncoder CreateEncoder(string format)
         {
             return format.ToLower() switch
             {
-                "jpg" or "jpeg" => "jpeg",
-                "png" => "png",
-                "bmp" => "bmp",
-                "gif" => "gif",
-                _ => "png"
-            };
-        }
-
-        /// <summary>
-        /// 获取对应的BitmapEncoder
-        /// </summary>
-        /// <param name="encoderType">编码器类型</param>
-        /// <returns>BitmapEncoder实例</returns>
-        private static System.Windows.Media.Imaging.BitmapEncoder GetBitmapEncoder(string encoderType)
-        {
-            return encoderType.ToLower() switch
-            {
-                "jpeg" => new JpegBitmapEncoder(),
-                "png" => new PngBitmapEncoder(),
+                "jpg" or "jpeg" => new JpegBitmapEncoder(),
                 "bmp" => new BmpBitmapEncoder(),
                 "gif" => new GifBitmapEncoder(),
                 _ => new PngBitmapEncoder()

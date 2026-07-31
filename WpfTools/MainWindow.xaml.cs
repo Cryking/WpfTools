@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Forms;
@@ -15,66 +13,76 @@ namespace WpfTools
 {
     /// <summary>
     /// 主窗口类 - 多功能工具箱应用主界面
-    /// 包含JSON格式化和图片/Base64转换功能
+    /// 包含JSON格式化、时间戳转换、字符串/图片Base64转换及定时提醒功能
     /// </summary>
     public partial class MainWindow : Window
     {
-        private BitmapImage _currentImage;
+        // 剪贴板粘贴的图片是InteropBitmap，故使用基类BitmapSource存储
+        private BitmapSource _currentImage;
         private NotifyIcon _notifyIcon;
         private DispatcherTimer _reminderTimer;
-
-        // Win32 API 用于闪烁窗口
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool FlashWindow(IntPtr hWnd, bool bInvert);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetForegroundWindow();
 
         public MainWindow()
         {
             InitializeComponent();
             InitializeEventHandlers();
             InitializeSystemTray();
-            RequestNotificationPermission();
         }
 
         /// <summary>
-        /// 请求通知权限
-        /// </summary>
-        private void RequestNotificationPermission()
-        {
-            try
-            {
-                // 在Windows 10/11中，应用程序需要通知权限才能显示通知
-                // 这是一个简单的实现，实际应用中可能需要更复杂的处理
-                var helper = new System.Windows.Interop.WindowInteropHelper(this);
-                if (helper.Handle != IntPtr.Zero)
-                {
-                    // 确保窗口已经创建
-                    this.Show();
-                    this.Hide(); // 立即隐藏，不影响启动时的显示逻辑
-                }
-            }
-            catch
-            {
-                // 忽略权限请求失败
-            }
-        }
-
-        /// <summary>
-        /// 初始化事件处理器
+        /// 初始化事件处理器（为文本框启用文件拖拽）
         /// </summary>
         private void InitializeEventHandlers()
         {
-            // 为文本框添加拖拽支持
+            // TextBox默认拦截拖拽，需在PreviewDragOver中标记已处理才Drop才能触发
             txtJsonInput.AllowDrop = true;
-            txtJsonInput.Drop += TxtJsonInput_Drop;
+            txtJsonInput.PreviewDragOver += OnFilePreviewDragOver;
+            txtJsonInput.PreviewDrop += TxtJsonInput_Drop;
             txtBase64.AllowDrop = true;
-            txtBase64.Drop += TxtBase64_Drop;
+            txtBase64.PreviewDragOver += OnFilePreviewDragOver;
+            txtBase64.PreviewDrop += TxtBase64_Drop;
+        }
 
-            // 为JSON输出文本框添加键盘事件处理
-            txtJsonOutput.KeyDown += TxtJsonOutput_KeyDown;
+        /// <summary>
+        /// 拖拽经过时显示复制光标并接管默认行为
+        /// </summary>
+        private void OnFilePreviewDragOver(object sender, System.Windows.DragEventArgs e)
+        {
+            e.Effects = e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop)
+                ? System.Windows.DragDropEffects.Copy
+                : System.Windows.DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// 复制文本到剪贴板并给出提示（统一处理空内容和异常）
+        /// </summary>
+        private static void CopyToClipboard(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                System.Windows.MessageBox.Show("没有内容可复制", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                System.Windows.Clipboard.SetText(text);
+                System.Windows.MessageBox.Show("已复制到剪贴板", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"复制失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        /// <summary>
+        /// 处理TreeView中TextBlock的鼠标左键点击事件
+        /// 用于实现长字符串的折叠/展开功能（节点内部通知UI自动刷新）
+        /// </summary>
+        private void TextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            ((sender as TextBlock)?.Tag as JsonTreeNode)?.ToggleLongText();
         }
 
         #region JSON工具相关事件处理
@@ -84,28 +92,46 @@ namespace WpfTools
         /// </summary>
         private void BtnClearJsonInput_Click(object sender, RoutedEventArgs e)
         {
-            txtJsonInput.Clear();
-            SetRichTextBoxText(txtJsonOutput, "");
+            try
+            {
+                txtJsonInput.Clear();
+                tvJsonOutput.ItemsSource = null;
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"清空失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         /// <summary>
-        /// 格式化JSON字符串
+        /// 格式化JSON字符串并显示到TreeView
         /// </summary>
         private void BtnFormatJson_Click(object sender, RoutedEventArgs e)
         {
             string input = txtJsonInput.Text;
-            string result = JsonFormatter.FormatJson(input);
-            SetRichTextBoxText(txtJsonOutput, result);
+            if (!JsonFormatter.TryParse(input, out string error))
+            {
+                System.Windows.MessageBox.Show(error, "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            DisplayJsonInTreeView(input);
         }
 
         /// <summary>
-        /// 压缩JSON字符串
+        /// 压缩JSON字符串（结果回填到输入框，便于直接复制）
         /// </summary>
         private void BtnCompressJson_Click(object sender, RoutedEventArgs e)
         {
             string input = txtJsonInput.Text;
-            string result = JsonFormatter.CompressJson(input);
-            SetRichTextBoxText(txtJsonOutput, result);
+            if (!JsonFormatter.TryParse(input, out string error))
+            {
+                System.Windows.MessageBox.Show(error, "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            txtJsonInput.Text = JsonFormatter.CompressJson(input);
+            DisplayJsonInTreeView(input);
         }
 
         /// <summary>
@@ -114,18 +140,13 @@ namespace WpfTools
         private void BtnValidateJson_Click(object sender, RoutedEventArgs e)
         {
             string input = txtJsonInput.Text;
-            string result = JsonFormatter.ValidateJson(input);
+            bool isValid = JsonFormatter.TryParse(input, out _);
 
-            // 如果验证成功，显示格式化后的结果
-            if (result.Contains("✓"))
-            {
-                string formatted = JsonFormatter.FormatJson(input);
-                SetRichTextBoxText(txtJsonOutput, formatted);
-            }
-            else
-            {
-                SetRichTextBoxText(txtJsonOutput, result);
-            }
+            if (isValid)
+                DisplayJsonInTreeView(input);
+
+            System.Windows.MessageBox.Show(JsonFormatter.ValidateJson(input), "验证结果",
+                MessageBoxButton.OK, isValid ? MessageBoxImage.Information : MessageBoxImage.Warning);
         }
 
         /// <summary>
@@ -133,12 +154,37 @@ namespace WpfTools
         /// </summary>
         private void BtnCopyJsonResult_Click(object sender, RoutedEventArgs e)
         {
-            string text = GetRichTextBoxText(txtJsonOutput);
-            if (!string.IsNullOrWhiteSpace(text))
+            CopyToClipboard(GetFormattedJsonResult());
+        }
+
+        /// <summary>
+        /// 将JSON字符串显示到TreeView
+        /// </summary>
+        /// <param name="jsonString">JSON字符串</param>
+        private void DisplayJsonInTreeView(string jsonString)
+        {
+            try
             {
-                System.Windows.Clipboard.SetText(text);
-                System.Windows.MessageBox.Show("已复制到剪贴板", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                using var jsonDoc = System.Text.Json.JsonDocument.Parse(jsonString);
+                var rootNode = JsonTreeNode.CreateFromJsonElement(jsonDoc.RootElement, "Root");
+                tvJsonOutput.ItemsSource = new System.Collections.Generic.List<JsonTreeNode> { rootNode };
             }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"显示JSON失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        /// <summary>
+        /// 获取当前格式化结果（TreeView有内容时按输入重新美化输出）
+        /// </summary>
+        /// <returns>格式化后的JSON字符串，无内容时返回空字符串</returns>
+        private string GetFormattedJsonResult()
+        {
+            string input = txtJsonInput.Text;
+            return tvJsonOutput.ItemsSource != null && JsonFormatter.TryParse(input, out _)
+                ? JsonFormatter.FormatJson(input)
+                : string.Empty;
         }
 
         /// <summary>
@@ -154,21 +200,19 @@ namespace WpfTools
         /// </summary>
         private void TxtJsonInput_Drop(object sender, System.Windows.DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+            if (!e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop)) return;
+
+            string[] files = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop);
+            if (files == null || files.Length == 0) return;
+
+            try
             {
-                string[] files = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop);
-                if (files.Length > 0)
-                {
-                    try
-                    {
-                        string content = File.ReadAllText(files[0]);
-                        txtJsonInput.Text = content;
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Windows.MessageBox.Show($"读取文件失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
+                txtJsonInput.Text = File.ReadAllText(files[0]);
+                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"读取文件失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -294,47 +338,18 @@ namespace WpfTools
         /// </summary>
         private void BtnCopyTimestampResult_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                string text = txtTimestampResult.Text;
-                if (!string.IsNullOrWhiteSpace(text))
-                {
-                    System.Windows.Clipboard.SetText(text);
-                    System.Windows.MessageBox.Show("已复制到剪贴板", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    System.Windows.MessageBox.Show("没有内容可复制", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"复制失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
+            CopyToClipboard(txtTimestampResult.Text);
         }
-
+        
         /// <summary>
-        /// 判断输入是否为时间戳
+        /// 判断输入是否为时间戳（纯数字且10~13位）
         /// </summary>
         /// <param name="input">输入字符串</param>
         /// <returns>是否为时间戳</returns>
-        private bool IsTimestamp(string input)
+        private static bool IsTimestamp(string input)
         {
-            if (string.IsNullOrEmpty(input))
-                return false;
-
-            // 移除可能的空格
-            input = input.Trim();
-
-            // 检查是否全为数字
-            foreach (char c in input)
-            {
-                if (!char.IsDigit(c))
-                    return false;
-            }
-
-            // 检查长度，通常时间戳是10位（秒级）或13位（毫秒级）
-            return input.Length >= 10 && input.Length <= 13;
+            string trimmed = input?.Trim() ?? string.Empty;
+            return trimmed.Length >= 10 && trimmed.Length <= 13 && long.TryParse(trimmed, out _);
         }
 
         #endregion
@@ -474,52 +489,7 @@ namespace WpfTools
         /// </summary>
         private void BtnCopyStringResult_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                string text = txtStringResult.Text;
-                if (!string.IsNullOrWhiteSpace(text))
-                {
-                    System.Windows.Clipboard.SetText(text);
-                    System.Windows.MessageBox.Show("已复制到剪贴板", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    System.Windows.MessageBox.Show("没有内容可复制", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"复制失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        #endregion
-
-        #region 查找功能相关事件处理
-
-        /// <summary>
-        /// 处理JSON输出文本框的键盘事件
-        /// </summary>
-        private void TxtJsonOutput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-            // 检测Ctrl+F组合键
-            if (e.Key == Key.F && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
-            {
-                OpenFindWindow();
-                e.Handled = true;
-            }
-        }
-
-        /// <summary>
-        /// 打开查找窗口
-        /// </summary>
-        private void OpenFindWindow()
-        {
-            // 创建一个简单的查找对话框
-            var dialog = new FindDialog();
-            dialog.Owner = this;
-            dialog.TargetRichTextBox = txtJsonOutput;
-            dialog.ShowDialog();
+            CopyToClipboard(txtStringResult.Text);
         }
 
         #endregion
@@ -531,7 +501,7 @@ namespace WpfTools
         /// </summary>
         private void BtnSelectImage_Click(object sender, RoutedEventArgs e)
         {
-            string? imagePath = ImageBase64Converter.ShowOpenFileDialog();
+            string imagePath = ImageBase64Converter.ShowOpenFileDialog();
             if (!string.IsNullOrEmpty(imagePath))
             {
                 LoadImageFromFile(imagePath);
@@ -539,32 +509,29 @@ namespace WpfTools
         }
 
         /// <summary>
-        /// 粘贴图片
+        /// 粘贴图片（剪贴板图片为BitmapSource，直接存储避免类型转换丢失）
         /// </summary>
         private void BtnPasteImage_Click(object sender, RoutedEventArgs e)
         {
-            if (System.Windows.Clipboard.ContainsImage())
-            {
-                try
-                {
-                    var image = System.Windows.Clipboard.GetImage();
-                    if (image != null)
-                    {
-                        imgPreview.Source = image;
-                        _currentImage = image as BitmapImage;
-
-                        // 自动转换为Base64
-                        AutoConvertImageToBase64();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.MessageBox.Show($"粘贴图片失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            else
+            if (!System.Windows.Clipboard.ContainsImage())
             {
                 System.Windows.MessageBox.Show("剪贴板中没有图片", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            try
+            {
+                var image = System.Windows.Clipboard.GetImage();
+                if (image != null)
+                {
+                    imgPreview.Source = image;
+                    _currentImage = image;
+                    AutoConvertImageToBase64();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"粘贴图片失败: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -624,34 +591,24 @@ namespace WpfTools
         /// </summary>
         private void BtnCopyBase64_Click(object sender, RoutedEventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(txtBase64.Text))
-            {
-                System.Windows.Clipboard.SetText(txtBase64.Text);
-                System.Windows.MessageBox.Show("Base64字符串已复制到剪贴板", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
+            CopyToClipboard(txtBase64.Text);
         }
 
         /// <summary>
-        /// 处理Base64文本框的文件拖拽
+        /// 处理Base64文本框的文件拖拽（仅接受图片文件）
         /// </summary>
         private void TxtBase64_Drop(object sender, System.Windows.DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
-            {
-                string[] files = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop);
-                if (files.Length > 0)
-                {
-                    string extension = Path.GetExtension(files[0]).ToLower();
-                    if (IsImageFile(extension))
-                    {
-                        LoadImageFromFile(files[0]);
-                    }
-                    else
-                    {
-                        System.Windows.MessageBox.Show("请拖拽图片文件", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                }
-            }
+            if (!e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop)) return;
+
+            string[] files = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop);
+            if (files == null || files.Length == 0) return;
+
+            e.Handled = true;
+            if (IsImageFile(Path.GetExtension(files[0]).ToLower()))
+                LoadImageFromFile(files[0]);
+            else
+                System.Windows.MessageBox.Show("请拖拽图片文件", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         #endregion
@@ -706,33 +663,6 @@ namespace WpfTools
         {
             string[] imageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".ico", ".webp" };
             return imageExtensions.Contains(extension);
-        }
-
-        /// <summary>
-        /// 设置RichTextBox的文本内容
-        /// </summary>
-        /// <param name="richTextBox">RichTextBox控件</param>
-        /// <param name="text">文本内容</param>
-        private void SetRichTextBoxText(System.Windows.Controls.RichTextBox richTextBox, string text)
-        {
-            richTextBox.Document.Blocks.Clear();
-            if (!string.IsNullOrEmpty(text))
-            {
-                var paragraph = new Paragraph();
-                paragraph.Inlines.Add(new Run(text));
-                richTextBox.Document.Blocks.Add(paragraph);
-            }
-        }
-
-        /// <summary>
-        /// 获取RichTextBox的文本内容
-        /// </summary>
-        /// <param name="richTextBox">RichTextBox控件</param>
-        /// <returns>文本内容</returns>
-        private string GetRichTextBoxText(System.Windows.Controls.RichTextBox richTextBox)
-        {
-            var textRange = new TextRange(richTextBox.Document.ContentStart, richTextBox.Document.ContentEnd);
-            return textRange.Text.TrimEnd('\r', '\n');
         }
 
         #endregion
@@ -800,7 +730,7 @@ namespace WpfTools
         /// <summary>
         /// 窗口状态变化事件处理
         /// </summary>
-        private void MainWindow_StateChanged(object? sender, EventArgs e)
+        private void MainWindow_StateChanged(object sender, EventArgs e)
         {
             if (this.WindowState == WindowState.Minimized)
             {
@@ -811,7 +741,7 @@ namespace WpfTools
         /// <summary>
         /// 窗口关闭事件处理
         /// </summary>
-        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             // 如果是用户点击关闭按钮，则隐藏到系统托盘而不是关闭应用
             e.Cancel = true;
@@ -837,28 +767,19 @@ namespace WpfTools
         private void HideToTray()
         {
             this.Hide();
-            //if (_notifyIcon != null)
-            //{
-            //    _notifyIcon.BalloonTipTitle = "多功能工具箱";
-            //    _notifyIcon.BalloonTipText = "已最小化到系统托盘";
-            //    _notifyIcon.BalloonTipIcon = ToolTipIcon.Info;
-            //    _notifyIcon.ShowBalloonTip(3000);
-            //}
         }
 
         /// <summary>
-        /// 退出应用程序
+        /// 退出应用程序（释放托盘图标和定时器资源）
         /// </summary>
         private void ExitApplication()
         {
+            _reminderTimer?.Stop();
             if (_notifyIcon != null)
             {
                 _notifyIcon.Visible = false;
                 _notifyIcon.Dispose();
-            }
-            if (_reminderTimer != null)
-            {
-                _reminderTimer.Stop();
+                _notifyIcon = null;
             }
             System.Windows.Application.Current.Shutdown();
         }
@@ -887,20 +808,14 @@ namespace WpfTools
         }
 
         /// <summary>
-        /// 设置提醒定时器
+        /// 设置提醒定时器（intervalMinutes为0时仅停止）
         /// </summary>
         private void SetupReminderTimer(int intervalMinutes, string message)
         {
             // 停止现有定时器
-            if (_reminderTimer != null)
-            {
-                _reminderTimer.Stop();
-            }
+            _reminderTimer?.Stop();
 
-            if (intervalMinutes <= 0)
-            {
-                return;
-            }
+            if (intervalMinutes <= 0) return;
 
             // 创建新定时器
             _reminderTimer = new DispatcherTimer
@@ -916,22 +831,22 @@ namespace WpfTools
         }
 
         /// <summary>
-        /// 显示提醒通知
+        /// 显示提醒通知（托盘气泡提示）
         /// </summary>
         private void ShowReminderNotification(string message)
         {
-            if (_notifyIcon != null)
+            if (_notifyIcon == null) return;
+
+            try
             {
-                try
-                {
-                    _notifyIcon.BalloonTipTitle = "定时提醒";
-                    _notifyIcon.BalloonTipText = message;
-                    _notifyIcon.BalloonTipIcon = ToolTipIcon.Info;
-                    _notifyIcon.ShowBalloonTip(10000);
-                }
-                catch
-                {
-                }
+                _notifyIcon.BalloonTipTitle = "定时提醒";
+                _notifyIcon.BalloonTipText = message;
+                _notifyIcon.BalloonTipIcon = ToolTipIcon.Info;
+                _notifyIcon.ShowBalloonTip(10000);
+            }
+            catch
+            {
+                // 气泡提示失败不影响主流程，忽略
             }
         }
         #endregion
